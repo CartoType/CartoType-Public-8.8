@@ -9,8 +9,9 @@ import UIKit
 import CoreLocation
 import CartoType
 
-class ViewController: CartoTypeViewController, UISearchBarDelegate, CLLocationManagerDelegate
-    {
+
+class ViewController: CartoTypeViewController, CartoTypeCreateRouteAsyncProtocol, UISearchBarDelegate, CLLocationManagerDelegate
+{
     var m_framework: CartoTypeFramework!
     var m_ui_scale: Double = 1
     var m_route_start_in_degrees = CartoTypePoint(x:0, y:0)
@@ -206,6 +207,28 @@ class ViewController: CartoTypeViewController, UISearchBarDelegate, CLLocationMa
         present(alert, animated: true, completion: nil)
         }
     
+    func handler(_ aResult: CTResult,route aRoute: CartoTypeRoute!)
+        {
+        DispatchQueue.main.async
+            {
+            [aResult, aRoute] in
+            let errorcode = CartoTypeResultCode(rawValue: UInt32(aResult))
+            switch (errorcode)
+                {
+                case CTErrorNone:
+                    self.m_framework.useRoute(aRoute,replace: true)
+                    self.stopNavigating()
+                    self.m_show_location = false
+                    self.m_navigate_button.isEnabled = true
+                    break
+                case CTErrorNoRoadsNearStartOfRoute: self.showError("no roads near start of route"); break
+                case CTErrorNoRoadsNearEndOfRoute: self.showError("no roads near end of route"); break
+                case CTErrorNoRouteConnectivity: self.showError("start and end are not connected"); break
+                default: self.showError("routing error, code \(aResult)"); break
+                }
+            }
+        }
+
     func calculateAndDisplayRoute()
         {
         if ((m_route_start_in_degrees.x == 0 && m_route_start_in_degrees.y == 0) || (m_route_end_in_degrees.x == 0 && m_route_end_in_degrees.y == 0))
@@ -220,20 +243,11 @@ class ViewController: CartoTypeViewController, UISearchBarDelegate, CLLocationMa
         end.point = m_route_end_in_degrees
         cs.append(start)
         cs.append(end)
-        let error = m_framework.startNavigation(cs)
-        let errorcode = CartoTypeResultCode(rawValue: UInt32(error))
-        m_navigate_button.isEnabled = false
-        switch (errorcode)
+            
+        let result = m_framework.createRouteAsync(self, profile: m_framework.profile(0), coordSet: cs, override: true)
+        if (result != 0)
             {
-            case CTErrorNone:
-                stopNavigating()
-                m_show_location = false
-                m_navigate_button.isEnabled = true
-                break
-            case CTErrorNoRoadsNearStartOfRoute: showError("no roads near start of route"); break
-            case CTErrorNoRoadsNearEndOfRoute: showError("no roads near end of route"); break
-            case CTErrorNoRouteConnectivity: showError("start and end are not connected"); break
-            default: showError("routing error, code \(error)"); break
+            showError("error in createRouteAsync, code \(result)")
             }
         }
         
@@ -445,7 +459,7 @@ class ViewController: CartoTypeViewController, UISearchBarDelegate, CLLocationMa
                 let temp = self.m_route_start_in_degrees
                 self.m_route_start_in_degrees = self.m_route_end_in_degrees
                 self.m_route_end_in_degrees = temp
-                self.calculateAndDisplayRoute()
+                DispatchQueue.global(qos: .background).asyncAfter(deadline: .now(), execute: { self.calculateAndDisplayRoute() })
                 }))
             alert.addAction(UIAlertAction(title: "Delete Route", style: .default, handler:
                 { _ in
@@ -459,28 +473,28 @@ class ViewController: CartoTypeViewController, UISearchBarDelegate, CLLocationMa
             {
             alert.addAction(UIAlertAction(title: "Car", style: .default, handler:
                 { _ in
-                self.setRouteProfileType(CarProfile)
+                DispatchQueue.global(qos: .background).asyncAfter(deadline: .now(), execute: { self.setRouteProfileType(CarProfile) })
                 }))
             }
         if (m_route_profile_type != BicycleProfile)
             {
             alert.addAction(UIAlertAction(title: "Bike", style: .default, handler:
                 { _ in
-                self.setRouteProfileType(BicycleProfile)
+                DispatchQueue.global(qos: .background).asyncAfter(deadline: .now(), execute: { self.setRouteProfileType(BicycleProfile) })
                 }))
             }
         if (m_route_profile_type != WalkingProfile)
             {
             alert.addAction(UIAlertAction(title: "Walk", style: .default, handler:
                 { _ in
-                self.setRouteProfileType(WalkingProfile)
+                DispatchQueue.global(qos: .background).asyncAfter(deadline: .now(), execute: { self.setRouteProfileType(WalkingProfile) })
                 }))
             }
         if (m_route_profile_type != HikingProfile)
             {
             alert.addAction(UIAlertAction(title: "Hike", style: .default, handler:
                 { _ in
-                self.setRouteProfileType(HikingProfile)
+                DispatchQueue.global(qos: .background).asyncAfter(deadline: .now(), execute: { self.setRouteProfileType(HikingProfile) })
                 }))
             }
         alert.addAction(UIAlertAction(title: "Cancel", style: .default, handler:
