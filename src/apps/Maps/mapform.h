@@ -127,6 +127,7 @@ class MapForm: public QOpenGLWidget
     void DrawRange();
     const CartoType::BitmapView* MapBitmap(CartoType::Result& aError);
     void CreateLegend();
+    void CreateTurnInstructions();
     void LeftButtonDown(int32_t aX,int32_t aY);
     void LeftButtonUp(int32_t aX,int32_t aY,bool aShift);
     void RightButtonDown(int32_t aX,int32_t aY);

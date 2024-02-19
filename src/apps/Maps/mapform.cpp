@@ -108,8 +108,7 @@ MapForm::MapForm(QWidget* aParent,MainWindow& aMainWindow,const std::vector<QStr
     m_framework->SetFollowMode(CartoType::FollowMode::None);
     m_framework->SetLocale(m_metric_units ? "en_XX" : "en");
     m_framework->EnableTurnInstructions(m_simulate_routing);
-    CartoType::ExtendedNoticePosition turn_instruction_position(CartoType::NoticePosition::TopLeft,15,"mm",4,"mm");
-    m_framework->SetTurnInstructions(m_metric_units,false,30,"mm",turn_instruction_position);
+    CreateTurnInstructions();
 
     CreateLegend();
     m_framework->EnableLegend(m_draw_legend || m_draw_scale);
@@ -1105,6 +1104,12 @@ void MapForm::CalculateAndDisplayRoute()
     m_main_window.statusBar()->showMessage("calculating route...");
     }
 
+void MapForm::CreateTurnInstructions()
+    {
+    CartoType::ExtendedNoticePosition turn_instruction_position(CartoType::NoticePosition::TopLeft,15,"mm",4,"mm");
+    m_framework->SetTurnInstructions(m_metric_units,false,30,"mm",turn_instruction_position);
+    }
+
 void MapForm::Find()
     {
     m_find_dialog.Set(*m_framework);
@@ -1336,6 +1341,10 @@ void MapForm::SetRouteProfileIndex(size_t aIndex)
             }
         m_framework->SetMainProfile(type);
         }
+
+    // Recreate the turn instructions to update the diagram colour.
+    CreateTurnInstructions();
+
     CalculateAndDisplayRoute();
     if (m_draw_range)
         DrawRange();
